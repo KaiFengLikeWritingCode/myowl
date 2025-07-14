@@ -19,6 +19,8 @@
 
 import sys
 from dotenv import load_dotenv
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from camel.models import ModelFactory
 from camel.toolkits import (
@@ -28,7 +30,9 @@ from camel.toolkits import (
     CodeExecutionToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
-from camel.societies import RolePlaying
+# from camel.societies import RolePlaying
+from owl.utils.enhanced_role_playing import OwlRolePlaying, run_society
+
 from camel.logger import set_log_level
 
 from owl.utils import run_society
@@ -42,7 +46,65 @@ env_path = base_dir / "owl" / ".env"
 load_dotenv(dotenv_path=str(env_path))
 
 
-def construct_society(question: str) -> RolePlaying:
+# def construct_society(question: str) -> RolePlaying:
+#     r"""Construct a society of agents based on the given question.
+#
+#     Args:
+#         question (str): The task or question to be addressed by the society.
+#
+#     Returns:
+#         RolePlaying: A configured society of agents ready to address the question.
+#     """
+#
+#     # Create models for different components
+#     models = {
+#         "user": ModelFactory.create(
+#             model_platform=ModelPlatformType.DEEPSEEK,
+#             model_type=ModelType.DEEPSEEK_CHAT,
+#             # model_type=ModelType.DEEPSEEK_REASONER,
+#             model_config_dict={"temperature": 0},
+#         ),
+#         "assistant": ModelFactory.create(
+#             model_platform=ModelPlatformType.DEEPSEEK,
+#             model_type=ModelType.DEEPSEEK_CHAT,
+#             # model_type=ModelType.DEEPSEEK_REASONER,
+#             model_config_dict={"temperature": 0},
+#         ),
+#     }
+#
+#     # Configure toolkits
+#     tools = [
+#         # *CodeExecutionToolkit(sandbox="subprocess", verbose=True).get_tools(),
+#         # SearchToolkit().search_duckduckgo,
+#         SearchToolkit().search_wiki,
+#         # SearchToolkit().search_baidu,
+#         # *ExcelToolkit().get_tools(),
+#         # *FileWriteToolkit(output_dir="./").get_tools(),
+#     ]
+#
+#     # Configure agent roles and parameters
+#     user_agent_kwargs = {"model": models["user"]}
+#     assistant_agent_kwargs = {"model": models["assistant"], "tools": tools}
+#
+#     # Configure task parameters
+#     task_kwargs = {
+#         "task_prompt": question,
+#         "with_task_specify": False,
+#     }
+#
+#     # Create and return the society
+#     society = RolePlaying(
+#         **task_kwargs,
+#         user_role_name="user",
+#         user_agent_kwargs=user_agent_kwargs,
+#         assistant_role_name="assistant",
+#         assistant_agent_kwargs=assistant_agent_kwargs,
+#         output_language="Chinese",
+#     )
+#
+#     return society
+
+def construct_society(question: str) -> OwlRolePlaying:
     r"""Construct a society of agents based on the given question.
 
     Args:
@@ -57,11 +119,13 @@ def construct_society(question: str) -> RolePlaying:
         "user": ModelFactory.create(
             model_platform=ModelPlatformType.DEEPSEEK,
             model_type=ModelType.DEEPSEEK_CHAT,
+            # model_type=ModelType.DEEPSEEK_REASONER,
             model_config_dict={"temperature": 0},
         ),
         "assistant": ModelFactory.create(
             model_platform=ModelPlatformType.DEEPSEEK,
             model_type=ModelType.DEEPSEEK_CHAT,
+            # model_type=ModelType.DEEPSEEK_REASONER,
             model_config_dict={"temperature": 0},
         ),
     }
@@ -69,7 +133,7 @@ def construct_society(question: str) -> RolePlaying:
     # Configure toolkits
     tools = [
         *CodeExecutionToolkit(sandbox="subprocess", verbose=True).get_tools(),
-        SearchToolkit().search_duckduckgo,
+        # SearchToolkit().search_duckduckgo,
         SearchToolkit().search_wiki,
         SearchToolkit().search_baidu,
         *ExcelToolkit().get_tools(),
@@ -87,22 +151,24 @@ def construct_society(question: str) -> RolePlaying:
     }
 
     # Create and return the society
-    society = RolePlaying(
+    society = OwlRolePlaying(
         **task_kwargs,
         user_role_name="user",
         user_agent_kwargs=user_agent_kwargs,
         assistant_role_name="assistant",
-        assistant_agent_kwargs=assistant_agent_kwargs,
-        output_language="Chinese",
+        assistant_agent_kwargs=assistant_agent_kwargs
+        # output_language="Chinese",
     )
 
     return society
 
 
+
 def main():
     r"""Main function to run the OWL system with an example question."""
     # Example research question
-    default_task = "搜索OWL项目最近的新闻并生成一篇报告，最后保存到本地。"
+    # default_task = "搜索OWL项目最近的新闻并生成一篇报告，最后保存到本地。"
+    default_task = "If my future wife has the same first name as the 15th first lady of the United States' mother and her surname is the same as the second assassinated president's mother's maiden name, what is my future wife's name?"
 
     # Override default task if command line argument is provided
     task = sys.argv[1] if len(sys.argv) > 1 else default_task

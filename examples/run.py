@@ -49,6 +49,18 @@ def construct_society(question: str) -> RolePlaying:
     """
 
     # Create models for different components
+
+    '''
+    | 角色                         | 职责                     |
+    | -------------------------- | ---------------------- |
+    | user                       | 代表最终用户，提出任务            |
+    | assistant                  | 核心决策者，协调工具与其他智能体       |
+    | browsing                   | 专门负责网页浏览与爬取            |
+    | planning                   | 负责将用户意图拆解为子任务          |
+    | video/image/audio/document | 分别负责多模态分析，调用对应 toolkit |
+    '''
+
+
     models = {
         "user": ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,

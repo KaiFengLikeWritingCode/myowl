@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 
 from camel.loaders import UnstructuredIO
 from camel.toolkits.base import BaseToolkit
@@ -31,6 +32,8 @@ import xmltodict
 import nest_asyncio
 import traceback
 
+from owl.utils.webpage_toolkit import WebPageToolkit
+
 nest_asyncio.apply()
 
 logger = get_logger(__name__)
@@ -48,6 +51,7 @@ class DocumentProcessingToolkit(BaseToolkit):
         self.image_tool = ImageAnalysisToolkit(model=model)
         # self.audio_tool = AudioAnalysisToolkit()
         self.excel_tool = ExcelToolkit()
+        self.web_toolkit = WebPageToolkit(model=model, cache_dir=self.cache_dir)
 
         self.cache_dir = "tmp/"
         if cache_dir:
@@ -222,7 +226,7 @@ class DocumentProcessingToolkit(BaseToolkit):
             )
     '''
     @retry_on_error()
-    def _extract_webpage_content(self, url: str) -> str:
+    def _extract_webpage_content_1(self, url: str) -> str:
         api_key = os.getenv("FIRECRAWL_API_KEY")
         from firecrawl import FirecrawlApp
 
@@ -240,6 +244,21 @@ class DocumentProcessingToolkit(BaseToolkit):
                 return "Error while crawling the webpage."
 
         return str(data["data"][0]["markdown"])
+    @retry_on_error()
+    def _extract_webpage_content(self, url: str) -> str:
+        """
+        使用本地异步爬虫抓取网页主体，并对图片做视觉-LLM caption。
+        返回 markdown 字符串，结构与 Firecrawl 相同。
+        """
+        try:
+            # max_depth=1 相当于 Firecrawl limit=1；可调
+            markdown = asyncio.run(
+                self.web_toolkit.crawl_and_extract(url, max_depth=1, limit=1)
+            )
+            return markdown or "No content found on the webpage."
+        except Exception as e:
+            logger.error(f"Local crawler failed: {e}")
+            return f"Error while crawling the webpage: {e}"
 
     def _download_file(self, url: str):
         r"""Download a file from a URL and save it to the cache directory."""
